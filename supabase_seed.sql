@@ -12,17 +12,18 @@ INSERT INTO public.departments (name, short_name) VALUES
     ('Mechanical Engineering', 'Mechanical Engineering');
 
 -- Insert Clubs
-INSERT INTO public.clubs (name, is_japanese_only) VALUES
-    ('Google Club', FALSE),
-    ('Mobile App Club', FALSE),
-    ('Unstop Igniters', FALSE),
-    ('IEEE Chapter', FALSE),
-    ('EWB Club', FALSE),
-    ('Sustainable Engineers', FALSE),
-    ('Innovators Forum', FALSE),
-    ('IoT Club', FALSE),
-    ('Communication Club', FALSE),
-    ('Japanese Club', TRUE);
+INSERT INTO public.clubs (name, is_japanese_only, is_aws_only) VALUES
+    ('Google Club', FALSE, FALSE),
+    ('Mobile App Club', FALSE, FALSE),
+    ('Unstop Igniters', FALSE, FALSE),
+    ('IEEE Chapter', FALSE, FALSE),
+    ('EWB Club', FALSE, FALSE),
+    ('Sustainable Engineers', FALSE, FALSE),
+    ('Innovators Forum', FALSE, FALSE),
+    ('IoT Club', FALSE, FALSE),
+    ('Communication Club', FALSE, FALSE),
+    ('Japanese Club', TRUE, FALSE),
+    ('AWS Cloud Club', FALSE, TRUE);
 
 -- Helper block to populate capacities based on the exact matrix
 DO $$
@@ -31,7 +32,7 @@ DECLARE
     d_eee UUID; d_ece UUID; d_vlsi UUID; d_it UUID; d_mech UUID;
     
     c_google UUID; c_mobile UUID; c_unstop UUID; c_ieee UUID; c_ewb UUID; 
-    c_sustainable UUID; c_innovators UUID; c_iot UUID; c_comm UUID; c_japan UUID;
+    c_sustainable UUID; c_innovators UUID; c_iot UUID; c_comm UUID; c_japan UUID; c_aws UUID;
 BEGIN
     SELECT id INTO d_aids FROM public.departments WHERE short_name = 'AI & DS';
     SELECT id INTO d_aiml FROM public.departments WHERE short_name = 'AI & ML';
@@ -54,6 +55,7 @@ BEGIN
     SELECT id INTO c_iot FROM public.clubs WHERE name = 'IoT Club';
     SELECT id INTO c_comm FROM public.clubs WHERE name = 'Communication Club';
     SELECT id INTO c_japan FROM public.clubs WHERE name = 'Japanese Club';
+    SELECT id INTO c_aws FROM public.clubs WHERE name = 'AWS Cloud Club';
 
     -- Google Club Capacities
     INSERT INTO public.club_department_capacities (department_id, club_id, capacity) VALUES 
@@ -95,5 +97,9 @@ BEGIN
     -- Configurable: Set to a high number or initially 0 until configured
     INSERT INTO public.club_department_capacities (department_id, club_id, capacity) VALUES 
     (d_aids, c_japan, 0), (d_aiml, c_japan, 0), (d_civil, c_japan, 0), (d_csbs, c_japan, 0), (d_cse, c_japan, 0), (d_eee, c_japan, 0), (d_ece, c_japan, 0), (d_vlsi, c_japan, 0), (d_it, c_japan, 0), (d_mech, c_japan, 0);
+
+    -- AWS Club Capacities
+    INSERT INTO public.club_department_capacities (department_id, club_id, capacity) VALUES 
+    (d_aids, c_aws, 0), (d_aiml, c_aws, 0), (d_civil, c_aws, 0), (d_csbs, c_aws, 0), (d_cse, c_aws, 0), (d_eee, c_aws, 0), (d_ece, c_aws, 0), (d_vlsi, c_aws, 0), (d_it, c_aws, 0), (d_mech, c_aws, 0);
 
 END $$;

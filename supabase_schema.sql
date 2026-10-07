@@ -14,6 +14,7 @@ CREATE TABLE public.clubs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL UNIQUE,
     is_japanese_only BOOLEAN NOT NULL DEFAULT FALSE,
+    is_aws_only BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -38,6 +39,7 @@ CREATE TABLE public.registrations (
     department_id UUID REFERENCES public.departments(id),
     year TEXT NOT NULL,
     is_japanese_student BOOLEAN NOT NULL DEFAULT FALSE,
+    is_aws_interested BOOLEAN NOT NULL DEFAULT FALSE,
     club_id UUID REFERENCES public.clubs(id),
     status TEXT NOT NULL DEFAULT 'ACCEPTED' CHECK (status IN ('ACCEPTED', 'REJECTED', 'CANCELLED')),
     confirmation_id TEXT NOT NULL UNIQUE,
@@ -85,6 +87,7 @@ CREATE OR REPLACE FUNCTION register_student(
     p_department_id UUID,
     p_year TEXT,
     p_is_japanese_student BOOLEAN,
+    p_is_aws_interested BOOLEAN,
     p_club_id UUID
 ) RETURNS JSON AS $$
 DECLARE
@@ -93,6 +96,7 @@ DECLARE
     v_remaining INTEGER;
     v_confirmation_id TEXT;
     v_is_japanese_only BOOLEAN;
+    v_is_aws_only BOOLEAN;
     v_result JSON;
 BEGIN
     -- 1. Check if student already registered
@@ -100,8 +104,8 @@ BEGIN
         RETURN json_build_object('success', false, 'error', 'You have already registered for a club.');
     END IF;
 
-    -- 2. Check if the club is Japanese-only and student is Japanese
-    SELECT is_japanese_only INTO v_is_japanese_only FROM public.clubs WHERE id = p_club_id;
+    -- 2. Check if the club is Japanese-only or AWS-only
+    SELECT is_japanese_only, is_aws_only INTO v_is_japanese_only, v_is_aws_only FROM public.clubs WHERE id = p_club_id;
     
     IF v_is_japanese_only = TRUE AND p_is_japanese_student = FALSE THEN
         RETURN json_build_object('success', false, 'error', 'Only Japanese students can select this club.');
@@ -111,8 +115,16 @@ BEGIN
         RETURN json_build_object('success', false, 'error', 'Japanese students can only select the Japanese Club.');
     END IF;
 
-    -- 3. Check capacity with locking (Bypass for Japanese club)
-    IF v_is_japanese_only = FALSE THEN
+    IF v_is_aws_only = TRUE AND p_is_aws_interested = FALSE THEN
+        RETURN json_build_object('success', false, 'error', 'Only students interested in AWS can select this club.');
+    END IF;
+    
+    IF v_is_aws_only = FALSE AND p_is_aws_interested = TRUE THEN
+        RETURN json_build_object('success', false, 'error', 'AWS interested students can only select the AWS Club.');
+    END IF;
+
+    -- 3. Check capacity with locking (Bypass for Japanese club and AWS club)
+    IF v_is_japanese_only = FALSE AND v_is_aws_only = FALSE THEN
         SELECT capacity INTO v_capacity 
         FROM public.club_department_capacities 
         WHERE department_id = p_department_id AND club_id = p_club_id
@@ -139,9 +151,9 @@ BEGIN
 
     -- 5. Insert registration
     INSERT INTO public.registrations (
-        student_name, register_number, college_email, phone_number, department_id, year, is_japanese_student, club_id, confirmation_id
+        student_name, register_number, college_email, phone_number, department_id, year, is_japanese_student, is_aws_interested, club_id, confirmation_id
     ) VALUES (
-        p_student_name, p_register_number, p_college_email, p_phone_number, p_department_id, p_year, p_is_japanese_student, p_club_id, v_confirmation_id
+        p_student_name, p_register_number, p_college_email, p_phone_number, p_department_id, p_year, p_is_japanese_student, p_is_aws_interested, p_club_id, v_confirmation_id
     );
 
     RETURN json_build_object('success', true, 'confirmation_id', v_confirmation_id);

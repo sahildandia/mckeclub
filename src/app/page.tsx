@@ -25,6 +25,7 @@ export default function Home() {
     department_id: '',
     year: '',
     is_japanese_student: false,
+    is_aws_interested: false,
     club_id: ''
   })
 
@@ -47,7 +48,7 @@ export default function Home() {
 
   useEffect(() => {
       setFormData(prev => ({ ...prev, club_id: '' }))
-  }, [formData.is_japanese_student])
+  }, [formData.is_japanese_student, formData.is_aws_interested])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
@@ -135,7 +136,11 @@ export default function Home() {
     )
   }
 
-  const availableClubs = clubs.filter(c => c.is_japanese_only === formData.is_japanese_student)
+  const availableClubs = clubs.filter(c => {
+    if (formData.is_japanese_student) return c.is_japanese_only;
+    if (formData.is_aws_interested) return c.is_aws_only;
+    return !c.is_japanese_only && !c.is_aws_only;
+  })
 
   return (
     <div className="w-full mx-auto max-w-full bg-white p-5 sm:p-8 md:p-12 shadow-2xl rounded-2xl border border-gray-300 relative">
@@ -223,19 +228,28 @@ export default function Home() {
             </div>
 
             <div className="sm:col-span-2 w-full min-w-0 bg-gray-100 p-5 sm:p-6 rounded-xl border-2 border-gray-300 mt-2">
-              <span className="block text-base sm:text-lg font-bold text-black mb-4 truncate">Are you a Japanese student?</span>
+              <span className="block text-base sm:text-lg font-bold text-black mb-4 truncate">Special Categories (Optional)</span>
               <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-10 w-full">
                 <label className="flex items-center cursor-pointer min-w-0">
-                  <input type="radio" name="is_japanese_student" value="true" required
-                    checked={formData.is_japanese_student === true} onChange={handleInputChange}
+                  <input type="radio" name="special_category" value="none" required
+                    checked={!formData.is_japanese_student && !formData.is_aws_interested} 
+                    onChange={() => setFormData(prev => ({ ...prev, is_japanese_student: false, is_aws_interested: false }))}
                     className="focus:ring-indigo-600 h-6 w-6 text-indigo-700 border-gray-400 cursor-pointer flex-shrink-0" />
-                  <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">Yes, I am</span>
+                  <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">None (Regular Clubs)</span>
                 </label>
                 <label className="flex items-center cursor-pointer min-w-0">
-                  <input type="radio" name="is_japanese_student" value="false" required
-                    checked={formData.is_japanese_student === false} onChange={handleInputChange}
+                  <input type="radio" name="special_category" value="japanese" required
+                    checked={formData.is_japanese_student} 
+                    onChange={() => setFormData(prev => ({ ...prev, is_japanese_student: true, is_aws_interested: false }))}
                     className="focus:ring-indigo-600 h-6 w-6 text-indigo-700 border-gray-400 cursor-pointer flex-shrink-0" />
-                  <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">No, I am not</span>
+                  <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">Japanese Student</span>
+                </label>
+                <label className="flex items-center cursor-pointer min-w-0">
+                  <input type="radio" name="special_category" value="aws" required
+                    checked={formData.is_aws_interested} 
+                    onChange={() => setFormData(prev => ({ ...prev, is_japanese_student: false, is_aws_interested: true }))}
+                    className="focus:ring-indigo-600 h-6 w-6 text-indigo-700 border-gray-400 cursor-pointer flex-shrink-0" />
+                  <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">AWS Certification</span>
                 </label>
               </div>
             </div>

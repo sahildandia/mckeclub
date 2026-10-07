@@ -27,7 +27,7 @@ export async function getFormData() {
 export async function getClubAvailability(departmentId: string) {
   try {
     const capacities = await sql`
-      SELECT c.club_id, c.capacity, cl.is_japanese_only 
+      SELECT c.club_id, c.capacity, cl.is_japanese_only, cl.is_aws_only 
       FROM public.club_department_capacities c
       JOIN public.clubs cl ON c.club_id = cl.id
       WHERE c.department_id = ${departmentId}
@@ -44,7 +44,7 @@ export async function getClubAvailability(departmentId: string) {
     capacities.forEach(c => {
       const registered = registeredCount[c.club_id] || 0
       
-      if (c.is_japanese_only) {
+      if (c.is_japanese_only || c.is_aws_only) {
         availability[c.club_id] = {
           capacity: 9999,
           registered: registered,
@@ -85,6 +85,7 @@ export async function submitRegistration(formData: any) {
         ${formData.department_id},
         ${formData.year},
         ${formData.is_japanese_student},
+        ${formData.is_aws_interested},
         ${formData.club_id}
       )
     `

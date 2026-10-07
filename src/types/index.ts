@@ -8,6 +8,7 @@ export type Club = {
   id: string;
   name: string;
   is_japanese_only: boolean;
+  is_aws_only?: boolean;
 };
 
 export type Capacity = {
@@ -26,6 +27,7 @@ export type Registration = {
   department_id: string;
   year: string;
   is_japanese_student: boolean;
+  is_aws_interested?: boolean;
   club_id: string;
   status: 'ACCEPTED' | 'REJECTED' | 'CANCELLED';
   confirmation_id: string;

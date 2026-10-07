@@ -47,8 +47,8 @@ export default function AdminDashboard({ session }: { session: any }) {
   // Calculate metrics
   const totalRegistrations = data.registrations.length
   
-  // Normal clubs are those not japanese only
-  const normalClubs = data.clubs.filter((c: any) => !c.is_japanese_only)
+  // Normal clubs are those not japanese only and not aws only
+  const normalClubs = data.clubs.filter((c: any) => !c.is_japanese_only && !c.is_aws_only)
   const normalClubIds = normalClubs.map((c: any) => c.id)
   
   const normalCapacities = data.capacities.filter((c: any) => normalClubIds.includes(c.club_id))
@@ -83,7 +83,7 @@ export default function AdminDashboard({ session }: { session: any }) {
   })
 
   const exportCSV = (clubId?: string) => {
-    const headers = ['Name', 'Register Number', 'College ID', 'Phone', 'Department', 'Year', 'Japanese Student', 'Club', 'Status', 'Confirmation ID', 'Registration Date']
+    const headers = ['Name', 'Register Number', 'College ID', 'Phone', 'Department', 'Year', 'Japanese Student', 'AWS Interested', 'Club', 'Status', 'Confirmation ID', 'Registration Date']
     
     const filteredRegistrations = clubId 
       ? data.registrations.filter((r: any) => r.club_id === clubId)
@@ -97,6 +97,7 @@ export default function AdminDashboard({ session }: { session: any }) {
       r.departments?.name,
       r.year,
       r.is_japanese_student ? 'Yes' : 'No',
+      r.is_aws_interested ? 'Yes' : 'No',
       r.clubs?.name,
       r.status,
       r.confirmation_id,
