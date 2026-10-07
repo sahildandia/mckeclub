@@ -82,9 +82,14 @@ export default function AdminDashboard({ session }: { session: any }) {
     })
   })
 
-  const exportCSV = () => {
+  const exportCSV = (clubId?: string) => {
     const headers = ['Name', 'Register Number', 'Email', 'Phone', 'Department', 'Year', 'Japanese Student', 'Club', 'Status', 'Confirmation ID', 'Registration Date']
-    const rows = data.registrations.map((r: any) => [
+    
+    const filteredRegistrations = clubId 
+      ? data.registrations.filter((r: any) => r.club_id === clubId)
+      : data.registrations
+
+    const rows = filteredRegistrations.map((r: any) => [
       r.student_name,
       r.register_number,
       r.college_email,
@@ -102,10 +107,12 @@ export default function AdminDashboard({ session }: { session: any }) {
       + headers.join(",") + "\n" 
       + rows.map((e: any[]) => e.map(item => `"${String(item).replace(/"/g, '""')}"`).join(",")).join("\n")
 
+    const clubName = clubId ? data.clubs.find((c: any) => c.id === clubId)?.name.replace(/\s+/g, '_') : 'all'
+
     const encodedUri = encodeURI(csvContent)
     const link = document.createElement("a")
     link.setAttribute("href", encodedUri)
-    link.setAttribute("download", `registrations_${new Date().toISOString().split('T')[0]}.csv`)
+    link.setAttribute("download", `registrations_${clubName}_${new Date().toISOString().split('T')[0]}.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -198,12 +205,27 @@ export default function AdminDashboard({ session }: { session: any }) {
         )
       })}
 
+      {/* Export Section */}
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-8">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Export Club Data</h3>
+        <div className="flex flex-wrap gap-3">
+          <button onClick={() => exportCSV()} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+            <Download className="h-4 w-4 mr-2" /> All Registrations
+          </button>
+          {data.clubs.map((club: any) => (
+            <button key={club.id} onClick={() => exportCSV(club.id)} className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">
+              <Download className="h-4 w-4 mr-2 text-gray-400" /> {club.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Registrations List */}
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
         <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-lg font-medium text-gray-900">Recent Registrations</h3>
-          <button onClick={exportCSV} className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200">
-            <Download className="h-4 w-4 mr-1" /> Export CSV
+          <button onClick={() => exportCSV()} className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200">
+            <Download className="h-4 w-4 mr-1" /> Export All CSV
           </button>
         </div>
         <div className="overflow-x-auto">
