@@ -111,25 +111,27 @@ BEGIN
         RETURN json_build_object('success', false, 'error', 'Japanese students can only select the Japanese Club.');
     END IF;
 
-    -- 3. Check capacity with locking
-    SELECT capacity INTO v_capacity 
-    FROM public.club_department_capacities 
-    WHERE department_id = p_department_id AND club_id = p_club_id
-    FOR UPDATE; -- Lock the row to prevent race conditions
+    -- 3. Check capacity with locking (Bypass for Japanese club)
+    IF v_is_japanese_only = FALSE THEN
+        SELECT capacity INTO v_capacity 
+        FROM public.club_department_capacities 
+        WHERE department_id = p_department_id AND club_id = p_club_id
+        FOR UPDATE; -- Lock the row to prevent race conditions
 
-    IF NOT FOUND THEN
-        RETURN json_build_object('success', false, 'error', 'Invalid department or club selection.');
-    END IF;
+        IF NOT FOUND THEN
+            RETURN json_build_object('success', false, 'error', 'Invalid department or club selection.');
+        END IF;
 
-    -- Get current registered count
-    SELECT COUNT(*) INTO v_registered 
-    FROM public.registrations 
-    WHERE department_id = p_department_id AND club_id = p_club_id AND status = 'ACCEPTED';
+        -- Get current registered count
+        SELECT COUNT(*) INTO v_registered 
+        FROM public.registrations 
+        WHERE department_id = p_department_id AND club_id = p_club_id AND status = 'ACCEPTED';
 
-    v_remaining := v_capacity - v_registered;
+        v_remaining := v_capacity - v_registered;
 
-    IF v_remaining <= 0 THEN
-        RETURN json_build_object('success', false, 'error', 'Registration Closed: No seats are currently available for this club in your department.');
+        IF v_remaining <= 0 THEN
+            RETURN json_build_object('success', false, 'error', 'Registration Closed: No seats are currently available for this club in your department.');
+        END IF;
     END IF;
 
     -- 4. Generate confirmation ID

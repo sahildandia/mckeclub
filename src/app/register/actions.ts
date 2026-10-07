@@ -12,7 +12,10 @@ export async function getFormData() {
     const clubs = await sql`SELECT * FROM public.clubs ORDER BY name`
 
     if (departments.length > 0 && clubs.length > 0) {
-      return { departments, clubs }
+      return { 
+        departments: departments as any, 
+        clubs: clubs as any 
+      }
     }
   } catch (err) {
     console.error("Database connection failed", err)
@@ -23,7 +26,12 @@ export async function getFormData() {
 
 export async function getClubAvailability(departmentId: string) {
   try {
-    const capacities = await sql`SELECT club_id, capacity FROM public.club_department_capacities WHERE department_id = ${departmentId}`
+    const capacities = await sql`
+      SELECT c.club_id, c.capacity, cl.is_japanese_only 
+      FROM public.club_department_capacities c
+      JOIN public.clubs cl ON c.club_id = cl.id
+      WHERE c.department_id = ${departmentId}
+    `
     const registrations = await sql`SELECT club_id FROM public.registrations WHERE department_id = ${departmentId} AND status = 'ACCEPTED'`
     
     const registeredCount: Record<string, number> = {}
@@ -35,10 +43,19 @@ export async function getClubAvailability(departmentId: string) {
     
     capacities.forEach(c => {
       const registered = registeredCount[c.club_id] || 0
-      availability[c.club_id] = {
-        capacity: c.capacity,
-        registered: registered,
-        remaining: c.capacity - registered
+      
+      if (c.is_japanese_only) {
+        availability[c.club_id] = {
+          capacity: 9999,
+          registered: registered,
+          remaining: 9999
+        }
+      } else {
+        availability[c.club_id] = {
+          capacity: c.capacity,
+          registered: registered,
+          remaining: c.capacity - registered
+        }
       }
     })
 
