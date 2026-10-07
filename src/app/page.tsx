@@ -234,7 +234,6 @@ export default function Home() {
                 <option value="1st Year" className="text-black bg-white">1st Year</option>
                 <option value="2nd Year" className="text-black bg-white">2nd Year</option>
                 <option value="3rd Year" className="text-black bg-white">3rd Year</option>
-                <option value="4th Year" className="text-black bg-white">4th Year</option>
               </select>
             </div>
 
