@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# College Club Registration Application
 
-## Getting Started
+A complete, production-ready full-stack application built with Next.js, React, TypeScript, Tailwind CSS, and Supabase.
 
-First, run the development server:
+## Setup Instructions
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. **Clone the repository** and install dependencies:
+   ```bash
+   npm install
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Supabase Setup**:
+   - Create a new project on [Supabase](https://supabase.com).
+   - Go to the SQL Editor and run the script found in `supabase_schema.sql`.
+   - Then run the script found in `supabase_seed.sql` to populate exactly 10 departments, 10 clubs, and the precise matrix of capacities.
+   - Set up an admin user in Supabase Auth (Authentication > Users) to log into the Admin Dashboard.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. **Environment Variables**:
+   Create a `.env.local` file in the root of the project with the following:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+   ```
+   > **Important:** Never expose `SUPABASE_SERVICE_ROLE_KEY` to the client. It is used in server actions for atomic transactions.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. **Run Locally**:
+   ```bash
+   npm run dev
+   ```
+   The application will be available at `http://localhost:3000`.
 
-## Learn More
+## Deployment to Vercel
 
-To learn more about Next.js, take a look at the following resources:
+1. Push your code to a GitHub/GitLab/Bitbucket repository.
+2. Go to Vercel and import the repository.
+3. In the Vercel project settings, add the three environment variables listed above.
+4. Deploy!
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Features
+- **Atomic Registration**: Registration is backed by a PL/pgSQL function to prevent race conditions when multiple students try to grab the last seat.
+- **Dynamic Capacities**: Capacity checks rely strictly on Department + Club (e.g. ECE + IoT Club). Year is completely ignored for quotas.
+- **Japanese Club Handling**: Only Japanese students can see/select the Japanese club.
+- **Admin Dashboard**: Real-time capacity matrices, secure authentication, and full CSV export capabilities.
