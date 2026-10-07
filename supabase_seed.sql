@@ -4,7 +4,7 @@ INSERT INTO public.departments (name, short_name) VALUES
     ('Artificial Intelligence and Machine Learning', 'AI & ML'),
     ('Civil Engineering', 'Civil Engineering'),
     ('Computer Science and Business Systems', 'CSBS'),
-    ('Computer Science and Engineering', 'CSE'),
+    ('Computer Science Engineering & Cyber Security', 'CSE'),
     ('Electrical and Electronics Engineering', 'EEE'),
     ('Electronics and Communication Engineering', 'ECE'),
     ('Electronics Engineering (VLSI)', 'VLSI'),

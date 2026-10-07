@@ -55,7 +55,11 @@ export default function Home() {
     const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     
     if (name === 'is_japanese_student') {
-       setFormData(prev => ({ ...prev, [name]: value === 'true' }))
+       const isTrue = value === 'true'
+       setFormData(prev => ({ ...prev, [name]: isTrue, ...(isTrue ? { is_aws_interested: false } : {}) }))
+    } else if (name === 'is_aws_interested') {
+       const isTrue = value === 'true'
+       setFormData(prev => ({ ...prev, [name]: isTrue, ...(isTrue ? { is_japanese_student: false } : {}) }))
     } else {
        setFormData(prev => ({ ...prev, [name]: val }))
     }
@@ -64,6 +68,12 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    
+    if (!formData.college_email.endsWith('@mkce.ac.in')) {
+      setError('Please use your official college email ID ending with @mkce.ac.in')
+      return
+    }
+
     setSubmitting(true)
 
     try {
@@ -179,8 +189,8 @@ export default function Home() {
                 value={formData.register_number} onChange={handleInputChange} />
             </div>
             <div className="w-full min-w-0">
-              <label htmlFor="college_email" className="block text-sm font-bold text-gray-900 mb-2 truncate">College ID</label>
-              <input type="text" name="college_email" id="college_email" required placeholder="e.g. 123456"
+              <label htmlFor="college_email" className="block text-sm font-bold text-gray-900 mb-2 truncate">Official college mail id</label>
+              <input type="email" name="college_email" id="college_email" required placeholder="student@mkce.ac.in" pattern=".*@mkce\.ac\.in$"
                 className="block w-full min-w-0 bg-white text-black border-2 border-gray-400 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 text-sm sm:text-base placeholder-gray-500"
                 value={formData.college_email} onChange={handleInputChange} />
             </div>
@@ -228,28 +238,37 @@ export default function Home() {
             </div>
 
             <div className="sm:col-span-2 w-full min-w-0 bg-gray-100 p-5 sm:p-6 rounded-xl border-2 border-gray-300 mt-2">
-              <span className="block text-base sm:text-lg font-bold text-black mb-4 truncate">Special Categories (Optional)</span>
+              <span className="block text-base sm:text-lg font-bold text-black mb-4 truncate">Are you a Japanese student?</span>
               <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-10 w-full">
                 <label className="flex items-center cursor-pointer min-w-0">
-                  <input type="radio" name="special_category" value="none" required
-                    checked={!formData.is_japanese_student && !formData.is_aws_interested} 
-                    onChange={() => setFormData(prev => ({ ...prev, is_japanese_student: false, is_aws_interested: false }))}
+                  <input type="radio" name="is_japanese_student" value="true" required
+                    checked={formData.is_japanese_student === true} onChange={handleInputChange}
                     className="focus:ring-indigo-600 h-6 w-6 text-indigo-700 border-gray-400 cursor-pointer flex-shrink-0" />
-                  <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">None (Regular Clubs)</span>
+                  <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">Yes, I am</span>
                 </label>
                 <label className="flex items-center cursor-pointer min-w-0">
-                  <input type="radio" name="special_category" value="japanese" required
-                    checked={formData.is_japanese_student} 
-                    onChange={() => setFormData(prev => ({ ...prev, is_japanese_student: true, is_aws_interested: false }))}
+                  <input type="radio" name="is_japanese_student" value="false" required
+                    checked={formData.is_japanese_student === false} onChange={handleInputChange}
                     className="focus:ring-indigo-600 h-6 w-6 text-indigo-700 border-gray-400 cursor-pointer flex-shrink-0" />
-                  <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">Japanese Student</span>
+                  <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">No, I am not</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="sm:col-span-2 w-full min-w-0 bg-gray-100 p-5 sm:p-6 rounded-xl border-2 border-gray-300 mt-2">
+              <span className="block text-base sm:text-lg font-bold text-black mb-4 truncate">Are you interested in AWS certification?</span>
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-10 w-full">
+                <label className="flex items-center cursor-pointer min-w-0">
+                  <input type="radio" name="is_aws_interested" value="true" required
+                    checked={formData.is_aws_interested === true} onChange={handleInputChange}
+                    className="focus:ring-indigo-600 h-6 w-6 text-indigo-700 border-gray-400 cursor-pointer flex-shrink-0" />
+                  <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">Yes, I am</span>
                 </label>
                 <label className="flex items-center cursor-pointer min-w-0">
-                  <input type="radio" name="special_category" value="aws" required
-                    checked={formData.is_aws_interested} 
-                    onChange={() => setFormData(prev => ({ ...prev, is_japanese_student: false, is_aws_interested: true }))}
+                  <input type="radio" name="is_aws_interested" value="false" required
+                    checked={formData.is_aws_interested === false} onChange={handleInputChange}
                     className="focus:ring-indigo-600 h-6 w-6 text-indigo-700 border-gray-400 cursor-pointer flex-shrink-0" />
-                  <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">AWS Certification</span>
+                  <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">No, I am not</span>
                 </label>
               </div>
             </div>
