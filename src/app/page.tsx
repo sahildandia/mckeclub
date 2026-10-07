@@ -174,14 +174,14 @@ export default function Home() {
                 value={formData.register_number} onChange={handleInputChange} />
             </div>
             <div className="w-full min-w-0">
-              <label htmlFor="college_email" className="block text-sm font-bold text-gray-900 mb-2 truncate">College Email Address</label>
-              <input type="email" name="college_email" id="college_email" required placeholder="student@college.edu"
+              <label htmlFor="college_email" className="block text-sm font-bold text-gray-900 mb-2 truncate">College ID</label>
+              <input type="text" name="college_email" id="college_email" required placeholder="e.g. 123456"
                 className="block w-full min-w-0 bg-white text-black border-2 border-gray-400 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 text-sm sm:text-base placeholder-gray-500"
                 value={formData.college_email} onChange={handleInputChange} />
             </div>
             <div className="w-full min-w-0">
               <label htmlFor="phone_number" className="block text-sm font-bold text-gray-900 mb-2 truncate">Phone Number</label>
-              <input type="tel" name="phone_number" id="phone_number" required placeholder="+1 (555) 000-0000"
+              <input type="tel" name="phone_number" id="phone_number" required placeholder="9876543210"
                 className="block w-full min-w-0 bg-white text-black border-2 border-gray-400 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 text-sm sm:text-base placeholder-gray-500"
                 value={formData.phone_number} onChange={handleInputChange} />
             </div>

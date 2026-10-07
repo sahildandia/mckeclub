@@ -83,7 +83,7 @@ export default function AdminDashboard({ session }: { session: any }) {
   })
 
   const exportCSV = (clubId?: string) => {
-    const headers = ['Name', 'Register Number', 'Email', 'Phone', 'Department', 'Year', 'Japanese Student', 'Club', 'Status', 'Confirmation ID', 'Registration Date']
+    const headers = ['Name', 'Register Number', 'College ID', 'Phone', 'Department', 'Year', 'Japanese Student', 'Club', 'Status', 'Confirmation ID', 'Registration Date']
     
     const filteredRegistrations = clubId 
       ? data.registrations.filter((r: any) => r.club_id === clubId)
