@@ -48,7 +48,7 @@ export default function Home() {
 
   useEffect(() => {
       setFormData(prev => ({ ...prev, club_id: '' }))
-  }, [formData.is_japanese_student, formData.is_aws_interested])
+  }, [formData.is_japanese_student])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
@@ -56,10 +56,7 @@ export default function Home() {
     
     if (name === 'is_japanese_student') {
        const isTrue = value === 'true'
-       setFormData(prev => ({ ...prev, [name]: isTrue, ...(isTrue ? { is_aws_interested: false } : {}) }))
-    } else if (name === 'is_aws_interested') {
-       const isTrue = value === 'true'
-       setFormData(prev => ({ ...prev, [name]: isTrue, ...(isTrue ? { is_japanese_student: false } : {}) }))
+       setFormData(prev => ({ ...prev, [name]: isTrue }))
     } else {
        setFormData(prev => ({ ...prev, [name]: val }))
     }
@@ -259,23 +256,6 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="sm:col-span-2 w-full min-w-0 bg-gray-100 p-5 sm:p-6 rounded-xl border-2 border-gray-300 mt-2">
-              <span className="block text-base sm:text-lg font-bold text-black mb-4 truncate">Are you interested in AWS certification?</span>
-              <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-10 w-full">
-                <label className="flex items-center cursor-pointer min-w-0">
-                  <input type="radio" name="is_aws_interested" value="true" required
-                    checked={formData.is_aws_interested === true} onChange={handleInputChange}
-                    className="focus:ring-indigo-600 h-6 w-6 text-indigo-700 border-gray-400 cursor-pointer flex-shrink-0" />
-                  <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">Yes, I am</span>
-                </label>
-                <label className="flex items-center cursor-pointer min-w-0">
-                  <input type="radio" name="is_aws_interested" value="false" required
-                    checked={formData.is_aws_interested === false} onChange={handleInputChange}
-                    className="focus:ring-indigo-600 h-6 w-6 text-indigo-700 border-gray-400 cursor-pointer flex-shrink-0" />
-                  <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">No, I am not</span>
-                </label>
-              </div>
-            </div>
           </div>
         </div>
 
