@@ -1,10 +1,38 @@
 'use server'
 
-import { getServiceSupabase } from "@/lib/supabase"
+import postgres from 'postgres'
 
-// We use service role here for admin actions, 
-// BUT we should verify the user is actually an admin!
-// Since we pass JWT from client, a better approach is to use the standard client with RLS.
-// However, server actions don't automatically get the client's auth context unless we pass the token.
+const connectionString = "postgresql://postgres.kwzuhysldgendoswrfzd:927624Bcs%40139@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?pgbouncer=true"
+const sql = postgres(connectionString)
 
-// Since the client is already authenticated with Supabase, we can just fetch data directly from the client component in `AdminDashboard.tsx`! That's much easier and inherently uses RLS.
+export async function getAdminData() {
+  try {
+    const departments = await sql`SELECT * FROM public.departments ORDER BY name`
+    const clubs = await sql`SELECT * FROM public.clubs ORDER BY name`
+    const capacities = await sql`SELECT * FROM public.club_department_capacities`
+    
+    // For registrations, we need to join with departments and clubs to get their names
+    const registrations = await sql`
+      SELECT r.*, 
+             json_build_object('name', d.name, 'short_name', d.short_name) as departments,
+             json_build_object('name', c.name) as clubs
+      FROM public.registrations r
+      LEFT JOIN public.departments d ON r.department_id = d.id
+      LEFT JOIN public.clubs c ON r.club_id = c.id
+      ORDER BY r.created_at DESC
+    `
+
+    return {
+      success: true,
+      data: {
+        departments: Array.from(departments),
+        clubs: Array.from(clubs),
+        capacities: Array.from(capacities),
+        registrations: Array.from(registrations)
+      }
+    }
+  } catch (error: any) {
+    console.error("Admin fetch error:", error)
+    return { success: false, error: error.message }
+  }
+}

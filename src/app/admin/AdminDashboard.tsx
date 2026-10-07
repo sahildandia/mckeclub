@@ -4,45 +4,39 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Download, RefreshCw } from 'lucide-react'
 
+import { getAdminData } from './actions'
+
 export default function AdminDashboard({ session }: { session: any }) {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchData = async () => {
     setLoading(true)
+    setError(null)
     
-    // Fetch all needed data
-    const [deptRes, clubRes, capRes, regRes] = await Promise.all([
-      supabase.from('departments').select('*').order('name'),
-      supabase.from('clubs').select('*').order('name'),
-      supabase.from('club_department_capacities').select('*'),
-      supabase.from('registrations').select(`
-        *,
-        departments(name, short_name),
-        clubs(name)
-      `).order('created_at', { ascending: false })
-    ])
-
-    if (deptRes.error || clubRes.error || capRes.error || regRes.error) {
-      console.error("Error fetching data")
+    try {
+      const res = await getAdminData()
+      if (res.success && res.data) {
+        setData(res.data)
+      } else {
+        setError(res.error || "Failed to fetch dashboard data.")
+      }
+    } catch (err: any) {
+      console.error(err)
+      setError("An unexpected error occurred while fetching data.")
+    } finally {
       setLoading(false)
-      return
     }
-
-    const departments = deptRes.data || []
-    const clubs = clubRes.data || []
-    const capacities = capRes.data || []
-    const registrations = regRes.data || []
-
-    setData({ departments, clubs, capacities, registrations })
-    setLoading(false)
   }
 
   useEffect(() => {
     fetchData()
   }, [])
 
-  if (loading || !data) return <div className="text-center py-10">Loading dashboard...</div>
+  if (loading) return <div className="text-center py-10">Loading dashboard...</div>
+  if (error) return <div className="text-center py-10 text-red-600">{error}</div>
+  if (!data) return null
 
   // Calculate metrics
   const totalRegistrations = data.registrations.length

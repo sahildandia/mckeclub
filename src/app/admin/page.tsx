@@ -30,6 +30,7 @@ export default function AdminPage() {
     e.preventDefault()
     setError('')
     
+
     // Bypass Supabase auth for the admin account
     if (email === 'admin@admin.com' && password === 'admin123') {
       setSession({ user: { email: 'admin@admin.com' } })
