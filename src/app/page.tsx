@@ -15,7 +15,14 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [successData, setSuccessData] = useState<Record<string, unknown> | null>(null)
+  const [successData, setSuccessData] = useState<{
+    student_name: string;
+    register_number: string;
+    departmentName?: string;
+    clubName?: string;
+    confirmation_id?: string;
+    registration_date?: string;
+  } | null>(null)
 
   const [formData, setFormData] = useState({
     student_name: '',
@@ -38,11 +45,17 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
+    let active = true;
     if (formData.department_id) {
-      getClubAvailability(formData.department_id).then(setAvailability)
+      getClubAvailability(formData.department_id).then(data => {
+        if (active) setAvailability(data)
+      })
     } else {
-      setAvailability({})
+      Promise.resolve().then(() => {
+        if (active) setAvailability({})
+      })
     }
+    return () => { active = false }
   }, [formData.department_id])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -55,14 +68,14 @@ export default function Home() {
     } else if (name === 'year') {
        setFormData(prev => ({ 
          ...prev, 
-         year: val as string,
+         year: value,
          club_id: '',
-         ...(val === '1st Year' ? { is_japanese_student: false } : {})
+         ...(value === '1st Year' ? { is_japanese_student: false } : {})
        }))
     } else if (name === 'department_id') {
-       setFormData(prev => ({ ...prev, [name]: val, club_id: '' }))
+       setFormData(prev => ({ ...prev, [name]: value, club_id: '' }))
     } else {
-       setFormData(prev => ({ ...prev, [name]: val }))
+       setFormData(prev => ({ ...prev, [name]: val } as unknown as typeof formData))
     }
   }
 
