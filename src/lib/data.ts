@@ -21,5 +21,6 @@ export const CLUBS = [
   { id: 'club-7', name: 'Innovators Forum', is_japanese_only: false },
   { id: 'club-8', name: 'IoT Club', is_japanese_only: false },
   { id: 'club-9', name: 'Communication Club', is_japanese_only: false },
-  { id: 'club-10', name: 'Japanese Club', is_japanese_only: true }
+  { id: 'club-10', name: 'Japanese Club', is_japanese_only: true },
+  { id: 'club-11', name: 'IBM Z Explore Student Community', is_japanese_only: false }
 ];
