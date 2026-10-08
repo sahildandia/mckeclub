@@ -48,7 +48,7 @@ export default function Home() {
 
   useEffect(() => {
       setFormData(prev => ({ ...prev, club_id: '' }))
-  }, [formData.is_japanese_student])
+  }, [formData.is_japanese_student, formData.year])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
@@ -57,6 +57,12 @@ export default function Home() {
     if (name === 'is_japanese_student') {
        const isTrue = value === 'true'
        setFormData(prev => ({ ...prev, [name]: isTrue }))
+    } else if (name === 'year') {
+       setFormData(prev => ({ 
+         ...prev, 
+         year: val as string,
+         ...(val === '1st Year' ? { is_japanese_student: false } : {})
+       }))
     } else {
        setFormData(prev => ({ ...prev, [name]: val }))
     }
@@ -144,6 +150,9 @@ export default function Home() {
   }
 
   const availableClubs = clubs.filter(c => {
+    if (formData.year === '1st Year') {
+      return c.name === 'Communication Club';
+    }
     if (formData.is_japanese_student) return c.is_japanese_only;
     if (formData.is_aws_interested) return c.is_aws_only;
     return !c.is_japanese_only && !c.is_aws_only;
@@ -231,28 +240,31 @@ export default function Home() {
                 className="block w-full min-w-0 bg-white text-black border-2 border-gray-400 rounded-lg shadow-sm py-3 px-3 sm:px-4 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 text-sm sm:text-base cursor-pointer"
                 value={formData.year} onChange={handleInputChange}>
                 <option value="" disabled className="text-gray-900">-- Choose Year --</option>
+                <option value="1st Year" className="text-black bg-white">1st Year</option>
                 <option value="2nd Year" className="text-black bg-white">2nd Year</option>
                 <option value="3rd Year" className="text-black bg-white">3rd Year</option>
               </select>
             </div>
 
-            <div className="sm:col-span-2 w-full min-w-0 bg-gray-100 p-5 sm:p-6 rounded-xl border-2 border-gray-300 mt-2">
-              <span className="block text-base sm:text-lg font-bold text-black mb-4 truncate">Are you a Japanese student?</span>
-              <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-10 w-full">
-                <label className="flex items-center cursor-pointer min-w-0">
-                  <input type="radio" name="is_japanese_student" value="true" required
-                    checked={formData.is_japanese_student === true} onChange={handleInputChange}
-                    className="focus:ring-indigo-600 h-6 w-6 text-indigo-700 border-gray-400 cursor-pointer flex-shrink-0" />
-                  <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">Yes, I am</span>
-                </label>
-                <label className="flex items-center cursor-pointer min-w-0">
-                  <input type="radio" name="is_japanese_student" value="false" required
-                    checked={formData.is_japanese_student === false} onChange={handleInputChange}
-                    className="focus:ring-indigo-600 h-6 w-6 text-indigo-700 border-gray-400 cursor-pointer flex-shrink-0" />
-                  <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">No, I am not</span>
-                </label>
+            {formData.year !== '1st Year' && (
+              <div className="sm:col-span-2 w-full min-w-0 bg-gray-100 p-5 sm:p-6 rounded-xl border-2 border-gray-300 mt-2">
+                <span className="block text-base sm:text-lg font-bold text-black mb-4 truncate">Are you a Japanese student?</span>
+                <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-10 w-full">
+                  <label className="flex items-center cursor-pointer min-w-0">
+                    <input type="radio" name="is_japanese_student" value="true" required={formData.year !== '1st Year'}
+                      checked={formData.is_japanese_student === true} onChange={handleInputChange}
+                      className="focus:ring-indigo-600 h-6 w-6 text-indigo-700 border-gray-400 cursor-pointer flex-shrink-0" />
+                    <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">Yes, I am</span>
+                  </label>
+                  <label className="flex items-center cursor-pointer min-w-0">
+                    <input type="radio" name="is_japanese_student" value="false" required={formData.year !== '1st Year'}
+                      checked={formData.is_japanese_student === false} onChange={handleInputChange}
+                      className="focus:ring-indigo-600 h-6 w-6 text-indigo-700 border-gray-400 cursor-pointer flex-shrink-0" />
+                    <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">No, I am not</span>
+                  </label>
+                </div>
               </div>
-            </div>
+            )}
 
           </div>
         </div>
