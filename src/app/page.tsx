@@ -231,7 +231,6 @@ export default function Home() {
                 className="block w-full min-w-0 bg-white text-black border-2 border-gray-400 rounded-lg shadow-sm py-3 px-3 sm:px-4 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 text-sm sm:text-base cursor-pointer"
                 value={formData.year} onChange={handleInputChange}>
                 <option value="" disabled className="text-gray-900">-- Choose Year --</option>
-                <option value="1st Year" className="text-black bg-white">1st Year</option>
                 <option value="2nd Year" className="text-black bg-white">2nd Year</option>
                 <option value="3rd Year" className="text-black bg-white">3rd Year</option>
               </select>
