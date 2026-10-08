@@ -15,7 +15,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [successData, setSuccessData] = useState<any>(null)
+  const [successData, setSuccessData] = useState<Record<string, unknown> | null>(null)
 
   const [formData, setFormData] = useState({
     student_name: '',
@@ -40,15 +40,10 @@ export default function Home() {
   useEffect(() => {
     if (formData.department_id) {
       getClubAvailability(formData.department_id).then(setAvailability)
-      setFormData(prev => ({ ...prev, club_id: '' }))
     } else {
       setAvailability({})
     }
   }, [formData.department_id])
-
-  useEffect(() => {
-      setFormData(prev => ({ ...prev, club_id: '' }))
-  }, [formData.is_japanese_student, formData.year])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
@@ -56,13 +51,16 @@ export default function Home() {
     
     if (name === 'is_japanese_student') {
        const isTrue = value === 'true'
-       setFormData(prev => ({ ...prev, [name]: isTrue }))
+       setFormData(prev => ({ ...prev, [name]: isTrue, club_id: '' }))
     } else if (name === 'year') {
        setFormData(prev => ({ 
          ...prev, 
          year: val as string,
+         club_id: '',
          ...(val === '1st Year' ? { is_japanese_student: false } : {})
        }))
+    } else if (name === 'department_id') {
+       setFormData(prev => ({ ...prev, [name]: val, club_id: '' }))
     } else {
        setFormData(prev => ({ ...prev, [name]: val }))
     }
@@ -92,7 +90,7 @@ export default function Home() {
       } else {
         setError(res.error || 'Registration failed')
       }
-    } catch (err: any) {
+    } catch {
       setError('An unexpected error occurred. Please try again.')
     } finally {
       setSubmitting(false)
