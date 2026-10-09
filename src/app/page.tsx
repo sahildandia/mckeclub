@@ -97,7 +97,7 @@ export default function Home() {
           ...formData,
           confirmation_id: res.confirmation_id,
           departmentName: departments.find(d => d.id === formData.department_id)?.name,
-          clubName: clubs.find(c => c.id === formData.club_id)?.name,
+          clubName: clubs.find(c => c.id === formData.club_id)?.name === 'Communication Club' ? 'LEXORA (COMMUNICATION CLUB)' : clubs.find(c => c.id === formData.club_id)?.name,
           registration_date: new Date().toLocaleString()
         })
       } else {
@@ -162,7 +162,7 @@ export default function Home() {
 
   const availableClubs = clubs.filter(c => {
     if (formData.year === '1st Year') {
-      return c.name === 'Communication Club';
+      return c.name === 'Communication Club' || c.name === 'LEXORA (COMMUNICATION CLUB)';
     }
     if (formData.is_japanese_student) return c.is_japanese_only;
     if (formData.is_aws_interested) return c.is_aws_only;
@@ -312,7 +312,7 @@ export default function Home() {
                             checked={isSelected} onChange={handleInputChange}
                             className="mt-1 h-5 w-5 text-indigo-700 border-gray-400 focus:ring-indigo-600 disabled:opacity-50 cursor-pointer flex-shrink-0" />
                           <span className="ml-3 sm:ml-4 block text-base sm:text-lg font-extrabold text-black break-words min-w-0">
-                            {club.name}
+                            {club.name === 'Communication Club' ? 'LEXORA (COMMUNICATION CLUB)' : club.name}
                           </span>
                         </div>
                       </div>
