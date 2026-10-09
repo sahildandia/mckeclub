@@ -197,7 +197,7 @@ export default function Home() {
             </div>
             <div className="w-full min-w-0">
               <label htmlFor="register_number" className="block text-sm font-bold text-gray-900 mb-2 truncate">Register Number</label>
-              <input type="text" name="register_number" id="register_number" required placeholder="e.g. 21BCE1234"
+              <input type="text" name="register_number" id="register_number" required placeholder="e.g. 927624BCS001"
                 className="block w-full min-w-0 bg-white text-black border-2 border-gray-400 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 text-sm sm:text-base font-mono uppercase placeholder-gray-500"
                 value={formData.register_number} onChange={handleInputChange} />
             </div>
