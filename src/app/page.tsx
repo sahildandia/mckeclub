@@ -161,9 +161,6 @@ export default function Home() {
   }
 
   const availableClubs = clubs.filter(c => {
-    if (formData.year === '1st Year') {
-      return c.name === 'Communication Club' || c.name === 'LEXORA (COMMUNICATION CLUB)';
-    }
     if (formData.is_japanese_student) return c.is_japanese_only;
     if (formData.is_aws_interested) return c.is_aws_only;
     return !c.is_japanese_only && !c.is_aws_only;
