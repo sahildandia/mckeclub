@@ -69,8 +69,7 @@ export default function Home() {
        setFormData(prev => ({ 
          ...prev, 
          year: value,
-         club_id: '',
-         ...(value === '1st Year' ? { is_japanese_student: false } : {})
+         club_id: ''
        }))
     } else if (name === 'department_id') {
        setFormData(prev => ({ ...prev, [name]: value, club_id: '' }))
@@ -254,25 +253,23 @@ export default function Home() {
               </select>
             </div>
 
-            {formData.year !== '1st Year' && (
               <div className="sm:col-span-2 w-full min-w-0 bg-gray-100 p-5 sm:p-6 rounded-xl border-2 border-gray-300 mt-2">
                 <span className="block text-base sm:text-lg font-bold text-black mb-4 truncate">Are you a Japanese student?</span>
                 <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-10 w-full">
                   <label className="flex items-center cursor-pointer min-w-0">
-                    <input type="radio" name="is_japanese_student" value="true" required={formData.year !== '1st Year'}
+                    <input type="radio" name="is_japanese_student" value="true" required
                       checked={formData.is_japanese_student === true} onChange={handleInputChange}
                       className="focus:ring-indigo-600 h-6 w-6 text-indigo-700 border-gray-400 cursor-pointer flex-shrink-0" />
                     <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">Yes, I am</span>
                   </label>
                   <label className="flex items-center cursor-pointer min-w-0">
-                    <input type="radio" name="is_japanese_student" value="false" required={formData.year !== '1st Year'}
+                    <input type="radio" name="is_japanese_student" value="false" required
                       checked={formData.is_japanese_student === false} onChange={handleInputChange}
                       className="focus:ring-indigo-600 h-6 w-6 text-indigo-700 border-gray-400 cursor-pointer flex-shrink-0" />
                     <span className="ml-3 text-base sm:text-lg font-bold text-gray-900 truncate">No, I am not</span>
                   </label>
                 </div>
               </div>
-            )}
 
           </div>
         </div>
