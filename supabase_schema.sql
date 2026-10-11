@@ -69,14 +69,14 @@ CREATE POLICY "Allow public read access on clubs" ON public.clubs FOR SELECT USI
 CREATE POLICY "Allow public read access on capacities" ON public.club_department_capacities FOR SELECT USING (true);
 
 -- Allow public status check
-CREATE POLICY "Allow public status check" ON public.registrations FOR SELECT USING (true);
+-- Status lookups use a server-only database connection.
 
 -- Allow authenticated admins full access
-CREATE POLICY "Allow admin full access on departments" ON public.departments USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow admin full access on clubs" ON public.clubs USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow admin full access on capacities" ON public.club_department_capacities USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow admin full access on registrations" ON public.registrations USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow admin full access on audit_logs" ON public.audit_logs USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow admin full access on departments" ON public.departments USING (auth.jwt() -> 'app_metadata' ->> 'role' = 'admin');
+CREATE POLICY "Allow admin full access on clubs" ON public.clubs USING (auth.jwt() -> 'app_metadata' ->> 'role' = 'admin');
+CREATE POLICY "Allow admin full access on capacities" ON public.club_department_capacities USING (auth.jwt() -> 'app_metadata' ->> 'role' = 'admin');
+CREATE POLICY "Allow admin full access on registrations" ON public.registrations USING (auth.jwt() -> 'app_metadata' ->> 'role' = 'admin');
+CREATE POLICY "Allow admin full access on audit_logs" ON public.audit_logs USING (auth.jwt() -> 'app_metadata' ->> 'role' = 'admin');
 
 -- Function to handle atomic registration
 CREATE OR REPLACE FUNCTION register_student(
@@ -99,6 +99,19 @@ DECLARE
     v_is_aws_only BOOLEAN;
     v_result JSON;
 BEGIN
+    IF p_college_email IS NULL OR p_college_email !~ '^[^@[:space:]]+@mkce\.ac\.in$'
+       OR p_student_name IS NULL OR length(trim(p_student_name)) NOT BETWEEN 1 AND 120
+       OR p_register_number IS NULL OR p_register_number !~ '^[A-Z0-9]{5,30}$'
+       OR p_phone_number IS NULL OR p_phone_number !~ '^[0-9]{10}$'
+       OR p_year IS NULL OR p_year NOT IN ('1st Year', '2nd Year', '3rd Year')
+       OR p_department_id IS NULL OR p_club_id IS NULL
+       OR p_is_japanese_student IS NULL OR p_is_aws_interested IS DISTINCT FROM FALSE THEN
+        RETURN json_build_object('success', false, 'error', 'Invalid registration details.');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM public.departments WHERE id = p_department_id) THEN
+        RETURN json_build_object('success', false, 'error', 'Invalid department.');
+    END IF;
+
     -- 1. Check if student already registered
     IF EXISTS (SELECT 1 FROM public.registrations WHERE register_number = p_register_number) THEN
         RETURN json_build_object('success', false, 'error', 'You have already registered for a club.');
@@ -107,6 +120,10 @@ BEGIN
     -- 2. Check if the club is Japanese-only or AWS-only
     SELECT is_japanese_only, is_aws_only INTO v_is_japanese_only, v_is_aws_only FROM public.clubs WHERE id = p_club_id;
     
+    IF NOT FOUND OR v_is_aws_only THEN
+        RETURN json_build_object('success', false, 'error', 'This club is not available.');
+    END IF;
+
     IF v_is_japanese_only = TRUE AND p_is_japanese_student = FALSE THEN
         RETURN json_build_object('success', false, 'error', 'Only Japanese students can select this club.');
     END IF;
@@ -162,4 +179,6 @@ EXCEPTION WHEN unique_violation THEN
     -- Fallback for concurrent unique violation on register_number or confirmation_id
     RETURN json_build_object('success', false, 'error', 'Registration failed due to a uniqueness conflict. Please try again.');
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
+
+REVOKE EXECUTE ON FUNCTION public.register_student(TEXT,TEXT,TEXT,TEXT,UUID,TEXT,BOOLEAN,BOOLEAN,UUID) FROM PUBLIC, anon, authenticated;

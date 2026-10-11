@@ -1,5 +1,7 @@
 const postgres = require('postgres');
-const connectionString = "postgresql://postgres.kwzuhysldgendoswrfzd:927624Bcs%40139@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres";
+process.loadEnvFile('.env.local');
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) throw new Error('DATABASE_URL is required');
 const sql = postgres(connectionString);
 
 async function run() {

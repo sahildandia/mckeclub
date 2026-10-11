@@ -40,8 +40,9 @@ export default function Home() {
     getFormData().then(data => {
       setDepartments(data.departments)
       setClubs(data.clubs)
-      setLoading(false)
-    })
+    }).catch(() => {
+      setError('Registration is temporarily unavailable. Please try again later.')
+    }).finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {
@@ -49,6 +50,8 @@ export default function Home() {
     if (formData.department_id) {
       getClubAvailability(formData.department_id).then(data => {
         if (active) setAvailability(data)
+      }).catch(() => {
+        if (active) setError('Unable to load club availability. Please try again.')
       })
     } else {
       Promise.resolve().then(() => {
@@ -115,6 +118,10 @@ export default function Home() {
         <div className="text-xl font-medium text-gray-900 animate-pulse">Loading Registration Form...</div>
       </div>
     )
+  }
+
+  if (departments.length === 0) {
+    return <div role="alert" className="p-8 text-center text-red-700">{error || 'Registration is temporarily unavailable.'}</div>
   }
 
   if (successData) {

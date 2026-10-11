@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import AdminDashboard from './AdminDashboard'
 
 export default function AdminPage() {
-  const [session, setSession] = useState<any>(null)
+  const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -14,8 +15,9 @@ export default function AdminPage() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
-      setLoading(false)
-    })
+    }).catch(() => {
+      setError('Unable to check your session. Please sign in again.')
+    }).finally(() => setLoading(false))
 
     const {
       data: { subscription },
@@ -30,12 +32,6 @@ export default function AdminPage() {
     e.preventDefault()
     setError('')
     
-
-    // Bypass Supabase auth for the admin account
-    if (email === 'admin@admin.com' && password === 'admin123') {
-      setSession({ user: { email: 'admin@admin.com' } })
-      return
-    }
 
     const { error } = await supabase.auth.signInWithPassword({
       email,

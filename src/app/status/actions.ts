@@ -1,41 +1,25 @@
 'use server'
 
-import { supabase } from "@/lib/supabase"
+import { sql } from '@/lib/db'
+import type { RegistrationStatus } from '@/types'
 
 export async function checkStatus(registerNumber: string) {
-  // Using public client because checking status is allowed publicly by our RLS policy
-  const { data, error } = await supabase
-    .from('registrations')
-    .select(`
-      id,
-      student_name,
-      department_id,
-      year,
-      club_id,
-      status,
-      confirmation_id,
-      departments(name),
-      clubs(name)
-    `)
-    .eq('register_number', registerNumber)
-    .single()
-
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return { success: false, error: 'No registration found for this Register Number.' }
-    }
-    return { success: false, error: error.message }
-  }
-
-  return { 
-    success: true, 
-    data: {
-      student_name: data.student_name,
-      department_name: (data.departments as any)?.name,
-      year: data.year,
-      club_name: (data.clubs as any)?.name,
-      status: data.status,
-      confirmation_id: data.confirmation_id
-    } 
+  const normalized = registerNumber.trim().toUpperCase()
+  if (!/^[A-Z0-9]{5,30}$/.test(normalized)) return { success: false, error: 'Enter a valid Register Number.' }
+  try {
+    const rows = await sql<RegistrationStatus[]>`
+      SELECT r.student_name, d.name as department_name, r.year,
+        c.name as club_name, r.status, r.confirmation_id
+      FROM public.registrations r
+      LEFT JOIN public.departments d ON d.id = r.department_id
+      LEFT JOIN public.clubs c ON c.id = r.club_id
+      WHERE r.register_number = ${normalized}
+      LIMIT 1
+    `
+    if (!rows[0]) return { success: false, error: 'No registration found for this Register Number.' }
+    return { success: true, data: rows[0] }
+  } catch (error) {
+    console.error('Status lookup failed', error)
+    return { success: false, error: 'Unable to check status. Please try again later.' }
   }
 }

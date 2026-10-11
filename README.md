@@ -1,6 +1,6 @@
 # College Club Registration Application
 
-A complete, production-ready full-stack application built with Next.js, React, TypeScript, Tailwind CSS, and Supabase.
+A full-stack application built with Next.js, React, TypeScript, Tailwind CSS, and Supabase.
 
 ## Setup Instructions
 
@@ -20,9 +20,14 @@ A complete, production-ready full-stack application built with Next.js, React, T
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+   DATABASE_URL=your_postgres_connection_string
+   ADMIN_EMAIL=your_admin_email
    ```
-   > **Important:** Never expose `SUPABASE_SERVICE_ROLE_KEY` to the client. It is used in server actions for atomic transactions.
+   Keep `DATABASE_URL` server-only. Create the admin account in Supabase Authentication, then run `node create_admin.js` to assign its admin role. Sign in again after assigning the role.
+
+   For existing databases, run `node scripts/apply-security.cjs` to apply restricted policies and registration validation.
+
+   Rotate any database password previously committed to source, then update `DATABASE_URL` locally and in deployment settings.
 
 4. **Run Locally**:
    ```bash
@@ -34,7 +39,7 @@ A complete, production-ready full-stack application built with Next.js, React, T
 
 1. Push your code to a GitHub/GitLab/Bitbucket repository.
 2. Go to Vercel and import the repository.
-3. In the Vercel project settings, add the three environment variables listed above.
+3. In the Vercel project settings, add the environment variables listed above.
 4. Deploy!
 
 ## Features

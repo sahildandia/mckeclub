@@ -1,38 +1,40 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useState, useEffect, useCallback } from 'react'
+import type { Session } from '@supabase/supabase-js'
+import type { AdminData, Club } from '@/types'
 import { Download, RefreshCw } from 'lucide-react'
 
 import { getAdminData } from './actions'
 
-export default function AdminDashboard({ session }: { session: any }) {
-  const [data, setData] = useState<any>(null)
+export default function AdminDashboard({ session }: { session: Session }) {
+  const [data, setData] = useState<AdminData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     setError(null)
     
     try {
-      const res = await getAdminData()
+      const res = await getAdminData(session.access_token)
       if (res.success && res.data) {
         setData(res.data)
       } else {
         setError(res.error || "Failed to fetch dashboard data.")
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(err)
       setError("An unexpected error occurred while fetching data.")
     } finally {
       setLoading(false)
     }
-  }
+  }, [session.access_token])
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    const timer = setTimeout(() => { void fetchData() }, 0)
+    return () => clearTimeout(timer)
+  }, [fetchData])
 
   if (loading) return <div className="text-center py-10">Loading dashboard...</div>
   if (error) return <div className="text-center py-10 text-red-600">{error}</div>
@@ -42,24 +44,23 @@ export default function AdminDashboard({ session }: { session: any }) {
   const totalRegistrations = data.registrations.length
   
   // Normal clubs are those not japanese only and not aws only
-  const normalClubs = data.clubs.filter((c: any) => !c.is_japanese_only && !c.is_aws_only)
-  const normalClubIds = normalClubs.map((c: any) => c.id)
+  const normalClubs = data.clubs.filter((c) => !c.is_japanese_only && !c.is_aws_only)
+  const normalClubIds = normalClubs.map((c) => c.id)
   
-  const normalCapacities = data.capacities.filter((c: any) => normalClubIds.includes(c.club_id))
-  const totalNormalCapacity = normalCapacities.reduce((sum: number, c: any) => sum + c.capacity, 0)
+  const normalCapacities = data.capacities.filter((c) => normalClubIds.includes(c.club_id))
+  const totalNormalCapacity = normalCapacities.reduce((sum, c) => sum + c.capacity, 0)
   
-  const normalRegistrations = data.registrations.filter((r: any) => normalClubIds.includes(r.club_id) && r.status === 'ACCEPTED')
+  const normalRegistrations = data.registrations.filter((r) => normalClubIds.includes(r.club_id) && r.status === 'ACCEPTED')
   const totalNormalRemaining = totalNormalCapacity - normalRegistrations.length
 
-  const japaneseRegistrations = data.registrations.filter((r: any) => !normalClubIds.includes(r.club_id))
 
   // Matrix calculation
-  const matrix: any = {}
-  normalClubs.forEach((club: any) => {
+  const matrix: Record<string, { club: Club; departments: Record<string, { capacity: number; registered: number; remaining: number; status: string }> }> = {}
+  normalClubs.forEach((club) => {
     matrix[club.id] = { club, departments: {} }
-    data.departments.forEach((dept: any) => {
-      const cap = data.capacities.find((c: any) => c.club_id === club.id && c.department_id === dept.id)?.capacity || 0
-      const reg = normalRegistrations.filter((r: any) => r.club_id === club.id && r.department_id === dept.id).length
+    data.departments.forEach((dept) => {
+      const cap = data.capacities.find((c) => c.club_id === club.id && c.department_id === dept.id)?.capacity || 0
+      const reg = normalRegistrations.filter((r) => r.club_id === club.id && r.department_id === dept.id).length
       matrix[club.id].departments[dept.id] = {
         capacity: cap,
         registered: reg,
@@ -70,8 +71,8 @@ export default function AdminDashboard({ session }: { session: any }) {
   })
 
   let fullCombos = 0
-  Object.values(matrix).forEach((clubData: any) => {
-    Object.values(clubData.departments).forEach((deptData: any) => {
+  Object.values(matrix).forEach((clubData) => {
+    Object.values(clubData.departments).forEach((deptData) => {
       if (deptData.status === 'Full' && deptData.capacity > 0) fullCombos++
     })
   })
@@ -80,10 +81,10 @@ export default function AdminDashboard({ session }: { session: any }) {
     const headers = ['Name', 'Register Number', 'Official college mail id', 'Phone', 'Department', 'Year', 'Japanese Student', 'AWS Interested', 'Club', 'Status', 'Confirmation ID', 'Registration Date']
     
     const filteredRegistrations = clubId 
-      ? data.registrations.filter((r: any) => r.club_id === clubId)
+      ? data.registrations.filter((r) => r.club_id === clubId)
       : data.registrations
 
-    const rows = filteredRegistrations.map((r: any) => [
+    const rows = filteredRegistrations.map((r) => [
       r.student_name,
       r.register_number,
       r.college_email,
@@ -100,9 +101,9 @@ export default function AdminDashboard({ session }: { session: any }) {
 
     const csvContent = "data:text/csv;charset=utf-8," 
       + headers.join(",") + "\n" 
-      + rows.map((e: any[]) => e.map(item => `"${String(item).replace(/"/g, '""')}"`).join(",")).join("\n")
+      + rows.map((e) => e.map(item => `"${String(item).replace(/"/g, '""')}"`).join(",")).join("\n")
 
-    const clubName = clubId ? data.clubs.find((c: any) => c.id === clubId)?.name.replace(/\s+/g, '_') : 'all'
+    const clubName = clubId ? data.clubs.find((c) => c.id === clubId)?.name.replace(/\s+/g, '_') : 'all'
 
     const encodedUri = encodeURI(csvContent)
     const link = document.createElement("a")
@@ -143,12 +144,12 @@ export default function AdminDashboard({ session }: { session: any }) {
       </div>
 
       {/* Matrix */}
-      {normalClubs.map((club: any) => {
+      {normalClubs.map((club) => {
         const cData = matrix[club.id]
         
         let clubTotalCap = 0
         let clubTotalReg = 0
-        Object.values(cData.departments).forEach((d: any) => {
+        Object.values(cData.departments).forEach((d) => {
           clubTotalCap += d.capacity
           clubTotalReg += d.registered
         })
@@ -173,7 +174,7 @@ export default function AdminDashboard({ session }: { session: any }) {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {data.departments.map((dept: any) => {
+                  {data.departments.map((dept) => {
                     const stats = cData.departments[dept.id]
                     return (
                       <tr key={dept.id}>
@@ -207,7 +208,7 @@ export default function AdminDashboard({ session }: { session: any }) {
           <button onClick={() => exportCSV()} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
             <Download className="h-4 w-4 mr-2" /> All Registrations
           </button>
-          {data.clubs.map((club: any) => (
+          {data.clubs.map((club) => (
             <button key={club.id} onClick={() => exportCSV(club.id)} className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">
               <Download className="h-4 w-4 mr-2 text-gray-400" /> {club.name}
             </button>
@@ -235,7 +236,7 @@ export default function AdminDashboard({ session }: { session: any }) {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {data.registrations.slice(0, 50).map((reg: any) => (
+              {data.registrations.slice(0, 50).map((reg) => (
                 <tr key={reg.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{reg.student_name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.register_number}</td>

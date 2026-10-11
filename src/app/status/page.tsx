@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import { checkStatus } from './actions'
 import { Search, AlertCircle } from 'lucide-react'
+import type { RegistrationStatus } from '@/types'
 
 export default function StatusPage() {
   const [registerNumber, setRegisterNumber] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [result, setResult] = useState<any>(null)
+  const [result, setResult] = useState<RegistrationStatus | null>(null)
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -20,12 +21,12 @@ export default function StatusPage() {
 
     try {
       const res = await checkStatus(registerNumber.trim())
-      if (res.success) {
+      if (res.success && res.data) {
         setResult(res.data)
       } else {
         setError(res.error || 'Failed to check status')
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred.')
     } finally {
       setLoading(false)

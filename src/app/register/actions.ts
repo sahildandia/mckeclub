@@ -1,30 +1,31 @@
 'use server'
 
-import postgres from 'postgres'
-import { DEPARTMENTS, CLUBS } from "@/lib/data"
+import { sql } from '@/lib/db'
+import type { Department, Club } from "@/types"
+import { registrationSchema } from "@/lib/registration-schema"
+import { z } from "zod"
 
-const connectionString = "postgresql://postgres.kwzuhysldgendoswrfzd:927624Bcs%40139@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?pgbouncer=true"
-const sql = postgres(connectionString)
 
 export async function getFormData() {
   try {
-    const departments = await sql`SELECT * FROM public.departments ORDER BY name`
-    const clubs = await sql`SELECT * FROM public.clubs ORDER BY name`
+    const departments = await sql<Department[]>`SELECT * FROM public.departments ORDER BY name`
+    const clubs = await sql<Club[]>`SELECT * FROM public.clubs WHERE is_aws_only = false ORDER BY name`
 
     if (departments.length > 0 && clubs.length > 0) {
       return { 
-        departments: departments as any, 
-        clubs: clubs as any 
+        departments: Array.from(departments),
+        clubs: Array.from(clubs)
       }
     }
   } catch (err) {
     console.error("Database connection failed", err)
   }
   
-  return { departments: DEPARTMENTS, clubs: CLUBS }
+  throw new Error("Registration is temporarily unavailable. Please try again later.")
 }
 
 export async function getClubAvailability(departmentId: string) {
+  if (!z.string().uuid().safeParse(departmentId).success) return {}
   try {
     const capacities = await sql`
       SELECT c.club_id, c.capacity, cl.is_japanese_only, cl.is_aws_only 
@@ -66,8 +67,13 @@ export async function getClubAvailability(departmentId: string) {
   }
 }
 
-export async function submitRegistration(formData: any) {
+export async function submitRegistration(input: unknown) {
+  const parsed = registrationSchema.safeParse(input)
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message }
+  const formData = parsed.data
   try {
+    const clubs = await sql<Club[]>`SELECT * FROM public.clubs WHERE id = ${formData.club_id}`
+    if (!clubs[0] || clubs[0].is_aws_only) return { success: false, error: 'This club is not available for registration.' }
     // Check if the student is already registered
     const existing = await sql`SELECT 1 FROM public.registrations WHERE register_number = ${formData.register_number}`
     if (existing.length > 0) {
@@ -98,7 +104,7 @@ export async function submitRegistration(formData: any) {
     } else {
       return { success: false, error: resObj.error }
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error("Registration error:", err)
     return { success: false, error: 'Registration failed due to a server error. Please try again.' }
   }

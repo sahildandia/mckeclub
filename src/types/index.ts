@@ -33,3 +33,22 @@ export type Registration = {
   confirmation_id: string;
   created_at: string;
 };
+
+export type AdminRegistration = Registration & {
+  departments: Pick<Department, 'name' | 'short_name'> | null;
+  clubs: Pick<Club, 'name'> | null;
+};
+export type AdminData = {
+  departments: Department[];
+  clubs: Club[];
+  capacities: Capacity[];
+  registrations: AdminRegistration[];
+};
+export type RegistrationStatus = {
+  student_name: string;
+  department_name: string | null;
+  year: string;
+  club_name: string | null;
+  status: Registration['status'];
+  confirmation_id: string;
+};
