@@ -61,16 +61,59 @@ test('verified admin can load dashboard data', async () => {
   assert.equal(queries, 4);
 });
 
-test('registration action rejects malformed requests and AWS clubs before insertion', async () => {
+test('registration action validates input and delegates eligibility to one atomic database call', async () => {
   let queries = 0;
   const actions = load('src/app/register/actions.ts', {
-    '@/lib/db': { sql: async () => { queries++; return [{ is_aws_only: true }]; } },
+    '@/lib/db': { sql: async (strings) => {
+      queries++;
+      assert.match(strings.join(''), /public\.register_student/);
+      return [{ register_student: { success: false, error: 'This club is not available.' } }];
+    } },
     '@/lib/registration-schema': schemaModule,
   });
   assert.equal((await actions.submitRegistration({})).success, false);
   assert.equal(queries, 0);
   assert.equal((await actions.submitRegistration(valid)).success, false);
   assert.equal(queries, 1);
+});
+
+test('successful registration needs only one database round trip', async () => {
+  let queries = 0;
+  const actions = load('src/app/register/actions.ts', {
+    '@/lib/db': { sql: async () => { queries++; return [{ register_student: { success: true, confirmation_id: 'CONF-TEST' } }]; } },
+    '@/lib/registration-schema': schemaModule,
+  });
+  const result = await actions.submitRegistration(valid);
+  assert.equal(result.success, true);
+  assert.equal(result.confirmation_id, 'CONF-TEST');
+  assert.equal(queries, 1);
+});
+
+test('seat availability is counted in one query with correct full and available states', async () => {
+  let queries = 0;
+  const actions = load('src/app/register/actions.ts', {
+    '@/lib/db': { sql: async () => { queries++; return [
+      { club_id: 'available', capacity: 10, registered: 3, is_japanese_only: false },
+      { club_id: 'full', capacity: 2, registered: 2, is_japanese_only: false },
+    ]; } },
+    '@/lib/registration-schema': schemaModule,
+  });
+  const result = await actions.getClubAvailability(valid.department_id);
+  assert.equal(result.available.remaining, 7);
+  assert.equal(result.full.remaining, 0);
+  assert.equal(queries, 1);
+});
+
+test('an unconfirmed database response never reports a successful registration', async () => {
+  const actions = load('src/app/register/actions.ts', {
+    '@/lib/db': { sql: async () => [] },
+    '@/lib/registration-schema': schemaModule,
+  });
+  const result = await actions.submitRegistration(valid);
+  assert.equal(result.success, false);
+  assert.equal(result.unconfirmed, true);
+  assert.match(result.error, /Check your registration status/);
+  assert.equal(result.confirmation_id, undefined);
 });
 
 test('status lookup normalizes register number and returns no-record result', async () => {

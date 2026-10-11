@@ -34,3 +34,9 @@ Keep real authentication, manual refresh, and existing CSV exports. Preserve vis
 
 # Accessibility
 Use associated form labels, table header scopes, text alongside status colors, reduced-motion support, and controls that wrap at small screen widths.
+
+# Student confirmation
+Use a restrained green success indicator, a highlighted club name, and aligned student details. The card adapts to small screens and contains no confirmation ID, print action, or status link.
+
+# Student form
+Preserve the existing form sections and indigo accent. Use fine borders, softer shadows, medium-weight labels, and consistent spacing. Selected club cards stay in place without scaling. Validation, department quotas, and eligibility behavior remain unchanged.
