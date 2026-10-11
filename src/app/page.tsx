@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { getFormData, getClubAvailability, submitRegistration } from './register/actions'
 import { Department, Club } from '@/types'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
-import Link from 'next/link'
 
 type Availability = Record<string, { capacity: number, registered: number, remaining: number }>
 
@@ -175,9 +174,7 @@ export default function Home() {
   return (
     <div className="w-full mx-auto max-w-full bg-white p-5 sm:p-8 md:p-12 shadow-2xl rounded-2xl border border-gray-300 relative">
       <div className="text-center mb-8 sm:mb-10 w-full break-words">
-        <Link href="/admin">
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-black tracking-tight leading-tight hover:text-indigo-600 transition-colors cursor-pointer">Club Registration Form</h1>
-        </Link>
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-black tracking-tight leading-tight">Club Registration Form</h1>
         <p className="mt-2 sm:mt-3 text-sm sm:text-lg font-medium text-gray-700">Please fill out the details carefully. You can only register for ONE club.</p>
       </div>
       
