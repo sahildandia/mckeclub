@@ -221,8 +221,21 @@ export default function Home() {
             <div className="w-full min-w-0">
               <label htmlFor="phone_number" className="block text-sm font-bold text-gray-900 mb-2 truncate">Phone Number</label>
               <input type="tel" name="phone_number" id="phone_number" required placeholder="9876543210"
+                inputMode="numeric" autoComplete="tel-national" pattern="[0-9]{10}" minLength={10} maxLength={10}
+                title="Please enter a 10-digit phone number."
+                aria-describedby={formData.phone_number && !/^[0-9]{10}$/.test(formData.phone_number) ? 'phone-number-help' : undefined}
+                aria-invalid={Boolean(formData.phone_number && !/^[0-9]{10}$/.test(formData.phone_number))}
+                onInvalid={e => e.currentTarget.setCustomValidity('Please enter a 10-digit phone number.')}
                 className="block w-full min-w-0 bg-white text-black border-2 border-gray-400 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 text-sm sm:text-base placeholder-gray-500"
-                value={formData.phone_number} onChange={handleInputChange} />
+                value={formData.phone_number} onChange={e => {
+                  e.currentTarget.setCustomValidity('')
+                  handleInputChange(e)
+                }} />
+              {formData.phone_number && !/^[0-9]{10}$/.test(formData.phone_number) && (
+                <p id="phone-number-help" className="mt-2 text-sm text-red-600 font-medium">
+                  Please enter a 10-digit phone number.
+                </p>
+              )}
             </div>
           </div>
         </div>

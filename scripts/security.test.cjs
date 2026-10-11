@@ -27,6 +27,9 @@ const valid = {
 test('registration normalizes valid input and rejects invalid fields and AWS', () => {
   const schema = schemaModule.registrationSchema;
   assert.equal(schema.parse({ ...valid, register_number: ' 927624bcs001 ' }).register_number, valid.register_number);
+  const shortPhone = schema.safeParse({ ...valid, phone_number: '941932316' });
+  assert.equal(shortPhone.success, false);
+  assert.equal(shortPhone.error.issues[0].message, 'Please enter a 10-digit phone number.');
   for (const input of [
     { college_email: 'test@example.com' }, { phone_number: '123' },
     { department_id: 'dept-1' }, { year: '4th Year' },
