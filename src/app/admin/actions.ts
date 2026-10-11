@@ -12,18 +12,18 @@ export async function getAdminData(accessToken: string) {
     if (error || !user || user.app_metadata?.role !== 'admin') {
       return { success: false, error: 'Admin access required.' }
     }
-    const departments = await sql<Department[]>`SELECT * FROM public.departments ORDER BY name`
-    const clubs = await sql<Club[]>`SELECT * FROM public.clubs ORDER BY name`
-    const capacities = await sql<Capacity[]>`SELECT * FROM public.club_department_capacities`
+    const departments = await sql<Department[]>`SELECT * FROM vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.departments ORDER BY name`
+    const clubs = await sql<Club[]>`SELECT * FROM vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.clubs ORDER BY name`
+    const capacities = await sql<Capacity[]>`SELECT * FROM vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.club_department_capacities`
     
     // For registrations, we need to join with departments and clubs to get their names
     const registrations = await sql<AdminRegistration[]>`
       SELECT r.*, 
              json_build_object('name', d.name, 'short_name', d.short_name) as departments,
              json_build_object('name', c.name) as clubs
-      FROM public.registrations r
-      LEFT JOIN public.departments d ON r.department_id = d.id
-      LEFT JOIN public.clubs c ON r.club_id = c.id
+      FROM vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.registrations r
+      LEFT JOIN vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.departments d ON r.department_id = d.id
+      LEFT JOIN vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.clubs c ON r.club_id = c.id
       ORDER BY r.created_at DESC
     `
 

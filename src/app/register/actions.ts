@@ -8,8 +8,8 @@ import { z } from "zod"
 
 export async function getFormData() {
   try {
-    const departments = await sql<Department[]>`SELECT * FROM public.departments ORDER BY name`
-    const clubs = await sql<Club[]>`SELECT * FROM public.clubs WHERE is_aws_only = false ORDER BY name`
+    const departments = await sql<Department[]>`SELECT * FROM vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.departments ORDER BY name`
+    const clubs = await sql<Club[]>`SELECT * FROM vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.clubs WHERE is_aws_only = false ORDER BY name`
 
     if (departments.length > 0 && clubs.length > 0) {
       return { 
@@ -29,11 +29,11 @@ export async function getClubAvailability(departmentId: string) {
   try {
     const capacities = await sql`
       SELECT c.club_id, c.capacity, cl.is_japanese_only, cl.is_aws_only 
-      FROM public.club_department_capacities c
-      JOIN public.clubs cl ON c.club_id = cl.id
+      FROM vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.club_department_capacities c
+      JOIN vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.clubs cl ON c.club_id = cl.id
       WHERE c.department_id = ${departmentId}
     `
-    const registrations = await sql`SELECT club_id FROM public.registrations WHERE department_id = ${departmentId} AND status = 'ACCEPTED'`
+    const registrations = await sql`SELECT club_id FROM vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.registrations WHERE department_id = ${departmentId} AND status = 'ACCEPTED'`
     
     const registeredCount: Record<string, number> = {}
     registrations.forEach(r => {
@@ -72,10 +72,10 @@ export async function submitRegistration(input: unknown) {
   if (!parsed.success) return { success: false, error: parsed.error.issues[0].message }
   const formData = parsed.data
   try {
-    const clubs = await sql<Club[]>`SELECT * FROM public.clubs WHERE id = ${formData.club_id}`
+    const clubs = await sql<Club[]>`SELECT * FROM vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.clubs WHERE id = ${formData.club_id}`
     if (!clubs[0] || clubs[0].is_aws_only) return { success: false, error: 'This club is not available for registration.' }
     // Check if the student is already registered
-    const existing = await sql`SELECT 1 FROM public.registrations WHERE register_number = ${formData.register_number}`
+    const existing = await sql`SELECT 1 FROM vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.registrations WHERE register_number = ${formData.register_number}`
     if (existing.length > 0) {
       return { success: false, error: 'You have already registered for a club.' }
     }
@@ -83,7 +83,7 @@ export async function submitRegistration(input: unknown) {
     // Call the RPC equivalent or run it directly in a transaction
     // Supabase RPCs are just Postgres functions! We can call it directly:
     const result = await sql`
-      SELECT * FROM register_student(
+      SELECT * FROM vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.register_student(
         ${formData.student_name},
         ${formData.register_number},
         ${formData.college_email},

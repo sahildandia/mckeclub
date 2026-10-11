@@ -10,9 +10,9 @@ export async function checkStatus(registerNumber: string) {
     const rows = await sql<RegistrationStatus[]>`
       SELECT r.student_name, d.name as department_name, r.year,
         c.name as club_name, r.status, r.confirmation_id
-      FROM public.registrations r
-      LEFT JOIN public.departments d ON d.id = r.department_id
-      LEFT JOIN public.clubs c ON c.id = r.club_id
+      FROM vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.registrations r
+      LEFT JOIN vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.departments d ON d.id = r.department_id
+      LEFT JOIN vercel_load_39ee0b151b2f4831a8de0c6b6cf96902.clubs c ON c.id = r.club_id
       WHERE r.register_number = ${normalized}
       LIMIT 1
     `
