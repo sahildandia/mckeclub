@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import AdminDashboard from './AdminDashboard'
+import Link from 'next/link'
+import { GraduationCap, LogOut, ArrowLeft, LockKeyhole, LoaderCircle } from 'lucide-react'
+import './admin.css'
 
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null)
@@ -11,6 +14,7 @@ export default function AdminPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [signingIn, setSigningIn] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -31,51 +35,59 @@ export default function AdminPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    if (error) setError(error.message)
+
+    setSigningIn(true)
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) setError(error.message)
+    } catch {
+      setError('Unable to sign in. Please try again.')
+    } finally {
+      setSigningIn(false)
+    }
   }
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>
+  if (loading) return <div className="admin-shell admin-loading" role="status"><LoaderCircle size={20} className="admin-spin" /> Checking your session…</div>
 
   if (!session) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="max-w-md w-full bg-white p-8 border border-gray-200 rounded-lg shadow-sm">
-          <h2 className="text-2xl font-bold text-center mb-6">Admin Login</h2>
-          {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded">{error}</div>}
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Email</label>
-              <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Password</label>
-              <input type="password" required value={password} onChange={e => setPassword(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-            </div>
-            <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
-              Sign In
-            </button>
+      <div className="admin-shell">
+        <Link href="/" className="admin-button"><ArrowLeft size={15} /> Registration form</Link>
+        <section className="admin-panel admin-login">
+          <div className="admin-brand-icon"><LockKeyhole size={22} aria-hidden="true" /></div>
+          <p className="admin-eyebrow">MKCE · Club administration</p>
+          <h1>Welcome back.</h1>
+          <p className="admin-muted" style={{ marginTop: 8 }}>Sign in to manage registrations and seat allocations.</p>
+          {error && <div className="admin-error" role="alert" style={{ marginTop: 20 }}>{error}</div>}
+          <form onSubmit={handleLogin}>
+            <div><label htmlFor="admin-email" className="admin-field-label">Email address</label><input id="admin-email" type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)} className="admin-control" placeholder="Your admin email" /></div>
+            <div><label htmlFor="admin-password" className="admin-field-label">Password</label><input id="admin-password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} className="admin-control" placeholder="Enter your password" /></div>
+            <button disabled={signingIn} type="submit" className="admin-button admin-button-primary">{signingIn && <LoaderCircle size={16} className="admin-spin" />}{signingIn ? 'Signing in…' : 'Sign in to dashboard'}</button>
           </form>
-        </div>
+          <p className="admin-login-note">Access is restricted to authorized college administrators.</p>
+        </section>
       </div>
     )
   }
 
   return (
-    <div className="w-full">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <button onClick={() => { supabase.auth.signOut(); setSession(null); }} className="text-sm text-gray-500 hover:text-gray-700">
-          Sign Out
-        </button>
-      </div>
+    <div className="admin-shell">
+      <header className="admin-header">
+        <div className="admin-brand">
+          <div className="admin-brand-icon"><GraduationCap size={24} aria-hidden="true" /></div>
+          <div><p className="admin-eyebrow">MKCE · Club administration</p><h1>Registration dashboard</h1><p className="admin-muted">An overview of students, clubs, and available seats.</p></div>
+        </div>
+        <div className="admin-actions">
+          <Link href="/" className="admin-button"><ArrowLeft size={15} /> Registration form</Link>
+          <button onClick={async () => {
+            const { error } = await supabase.auth.signOut()
+            if (error) setError('Unable to sign out. Please try again.')
+            else setSession(null)
+          }} className="admin-button"><LogOut size={15} /> Sign out</button>
+        </div>
+      </header>
+      {error && <div className="admin-error" role="alert">{error}</div>}
       <AdminDashboard session={session} />
     </div>
   )

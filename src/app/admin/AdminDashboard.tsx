@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import type { AdminData, Club } from '@/types'
-import { Download, RefreshCw } from 'lucide-react'
+import { Download, RefreshCw, Users, Armchair, CircleCheck, CircleAlert, Search, ClipboardList } from 'lucide-react'
 
 import { getAdminData } from './actions'
 
@@ -11,15 +11,20 @@ export default function AdminDashboard({ session }: { session: Session }) {
   const [data, setData] = useState<AdminData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedClub, setSelectedClub] = useState('')
+  const [exportClub, setExportClub] = useState('')
+  const [search, setSearch] = useState('')
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
     setError(null)
-    
+
     try {
       const res = await getAdminData(session.access_token)
       if (res.success && res.data) {
         setData(res.data)
+        setUpdatedAt(new Date())
       } else {
         setError(res.error || "Failed to fetch dashboard data.")
       }
@@ -36,20 +41,19 @@ export default function AdminDashboard({ session }: { session: Session }) {
     return () => clearTimeout(timer)
   }, [fetchData])
 
-  if (loading) return <div className="text-center py-10">Loading dashboard...</div>
-  if (error) return <div className="text-center py-10 text-red-600">{error}</div>
-  if (!data) return null
+  if (loading && !data) return <div className="admin-loading" role="status"><RefreshCw size={20} className="admin-spin" /> Loading registrations and seat allocations…</div>
+  if (!data) return <div className="admin-error" role="alert">{error || 'Unable to load dashboard.'} <button className="admin-button" onClick={fetchData}>Try again</button></div>
 
   // Calculate metrics
   const totalRegistrations = data.registrations.length
-  
+
   // Normal clubs are those not japanese only and not aws only
   const normalClubs = data.clubs.filter((c) => !c.is_japanese_only && !c.is_aws_only)
   const normalClubIds = normalClubs.map((c) => c.id)
-  
+
   const normalCapacities = data.capacities.filter((c) => normalClubIds.includes(c.club_id))
   const totalNormalCapacity = normalCapacities.reduce((sum, c) => sum + c.capacity, 0)
-  
+
   const normalRegistrations = data.registrations.filter((r) => normalClubIds.includes(r.club_id) && r.status === 'ACCEPTED')
   const totalNormalRemaining = totalNormalCapacity - normalRegistrations.length
 
@@ -79,8 +83,8 @@ export default function AdminDashboard({ session }: { session: Session }) {
 
   const exportCSV = (clubId?: string) => {
     const headers = ['Name', 'Register Number', 'Official college mail id', 'Phone', 'Department', 'Year', 'Japanese Student', 'AWS Interested', 'Club', 'Status', 'Confirmation ID', 'Registration Date']
-    
-    const filteredRegistrations = clubId 
+
+    const filteredRegistrations = clubId
       ? data.registrations.filter((r) => r.club_id === clubId)
       : data.registrations
 
@@ -99,8 +103,8 @@ export default function AdminDashboard({ session }: { session: Session }) {
       new Date(r.created_at).toLocaleString()
     ])
 
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(",") + "\n" 
+    const csvContent = "data:text/csv;charset=utf-8,"
+      + headers.join(",") + "\n"
       + rows.map((e) => e.map(item => `"${String(item).replace(/"/g, '""')}"`).join(",")).join("\n")
 
     const clubName = clubId ? data.clubs.find((c) => c.id === clubId)?.name.replace(/\s+/g, '_') : 'all'
@@ -114,146 +118,99 @@ export default function AdminDashboard({ session }: { session: Session }) {
     document.body.removeChild(link)
   }
 
-  return (
-    <div className="space-y-8">
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500">Total Registrations</h3>
-          <p className="mt-2 text-3xl font-bold text-gray-900">{totalRegistrations}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500">Total Normal Capacity</h3>
-          <p className="mt-2 text-3xl font-bold text-gray-900">{totalNormalCapacity}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500">Remaining Normal Seats</h3>
-          <p className="mt-2 text-3xl font-bold text-indigo-600">{totalNormalRemaining}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500">Full Combinations</h3>
-          <p className="mt-2 text-3xl font-bold text-red-600">{fullCombos}</p>
-        </div>
-      </div>
+  const activeClub = normalClubs.find(club => club.id === selectedClub) || normalClubs[0]
+  const activeStats = activeClub ? matrix[activeClub.id].departments : {}
+  const activeCapacity = Object.values(activeStats).reduce((sum, row) => sum + row.capacity, 0)
+  const activeRegistered = Object.values(activeStats).reduce((sum, row) => sum + row.registered, 0)
+  const recentRegistrations = data.registrations.slice(0, 50)
+  const query = search.trim().toLowerCase()
+  const visibleRegistrations = recentRegistrations.filter(row =>
+    [row.student_name, row.register_number, row.departments?.short_name, row.clubs?.name]
+      .some(value => value?.toLowerCase().includes(query)))
+  const metrics = [
+    { label: 'Total registrations', value: totalRegistrations, note: 'Across all clubs', icon: Users },
+    { label: 'Allocated seats', value: totalNormalCapacity, note: 'Department-based quotas', icon: Armchair },
+    { label: 'Available seats', value: totalNormalRemaining, note: 'In clubs with seat limits', icon: CircleCheck, accent: true },
+    { label: 'Full quotas', value: fullCombos, note: 'Club and department combinations', icon: CircleAlert },
+  ]
 
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Capacity Matrix</h2>
-        <button onClick={fetchData} className="flex items-center text-sm text-indigo-600 hover:text-indigo-800">
-          <RefreshCw className="h-4 w-4 mr-1" /> Refresh
+  return (
+    <div>
+      <div className="admin-toolbar">
+        <p className="admin-muted"><span className="admin-status-dot" />{updatedAt ? `Updated at ${updatedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Registration overview'}</p>
+        <button className="admin-button" onClick={fetchData} disabled={loading}>
+          <RefreshCw size={15} className={loading ? 'admin-spin' : ''} /> {loading ? 'Refreshing…' : 'Refresh data'}
         </button>
       </div>
+      {error && <div className="admin-error" role="alert">{error}</div>}
+      <div className="admin-metrics">
+        {metrics.map(metric => <div key={metric.label} className={`admin-metric ${metric.accent ? 'admin-metric-accent' : ''}`}>
+          <div className="admin-metric-label"><span>{metric.label}</span><metric.icon size={17} aria-hidden="true" /></div>
+          <span className="admin-metric-number">{metric.value.toLocaleString()}</span>
+          <p className="admin-metric-note">{metric.note}</p>
+        </div>)}
+      </div>
 
-      {/* Matrix */}
-      {normalClubs.map((club) => {
-        const cData = matrix[club.id]
-        
-        let clubTotalCap = 0
-        let clubTotalReg = 0
-        Object.values(cData.departments).forEach((d) => {
-          clubTotalCap += d.capacity
-          clubTotalReg += d.registered
-        })
-
-        return (
-          <div key={club.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900">{club.name}</h3>
-              <div className="text-sm text-gray-500">
-                Total: {clubTotalReg} / {clubTotalCap} ({clubTotalCap - clubTotalReg} remaining)
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-white">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Capacity</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Registered</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Remaining</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+      <div className="admin-workspace">
+        <section className="admin-panel" aria-labelledby="capacity-heading">
+          <div className="admin-panel-heading">
+            <div><h2 id="capacity-heading">Seat allocation</h2><p>Compare availability across departments.</p></div>
+            <label className="sr-only" htmlFor="capacity-club">Club for seat allocation</label>
+            <select id="capacity-club" className="admin-control admin-club-select" value={activeClub?.id || ''} onChange={e => setSelectedClub(e.target.value)}>
+              {normalClubs.map(club => <option value={club.id} key={club.id}>{club.name === 'Communication Club' ? 'LEXORA (Communication Club)' : club.name}</option>)}
+            </select>
+          </div>
+          {activeClub ? <>
+            <div className="admin-table-wrap" tabIndex={0} role="region" aria-label="Department seat allocation">
+              <table className="admin-table">
+                <thead><tr><th scope="col">Department</th><th scope="col" className="admin-number">Seats</th><th scope="col" className="admin-number">Registered</th><th scope="col" className="admin-number">Available</th><th scope="col">Status</th></tr></thead>
+                <tbody>{data.departments.map(dept => {
+                  const row = activeStats[dept.id]
+                  return <tr key={dept.id}>
+                    <th scope="row" style={{ background: 'transparent', color: 'var(--admin-ink)', fontSize: 13 }} title={dept.name}>{dept.short_name}</th>
+                    <td className="admin-number">{row.capacity}</td><td className="admin-number">{row.registered}</td>
+                    <td className="admin-number" style={{ fontWeight: 600 }}>{Math.max(0, row.remaining)}</td>
+                    <td><span className={`admin-badge ${row.remaining <= 0 ? 'admin-badge-full' : row.remaining <= 3 ? 'admin-badge-low' : ''}`}>{row.capacity === 0 ? 'Not allocated' : row.remaining <= 0 ? 'Full' : row.remaining <= 3 ? 'Filling up' : 'Available'}</span></td>
                   </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {data.departments.map((dept) => {
-                    const stats = cData.departments[dept.id]
-                    return (
-                      <tr key={dept.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{dept.short_name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{stats.capacity}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{stats.registered}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
-                          <span className={stats.remaining <= 3 && stats.remaining > 0 ? "text-amber-600" : (stats.remaining === 0 ? "text-red-600" : "text-green-600")}>
-                            {stats.remaining}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-center border-l">
-                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${stats.status === 'Available' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                            {stats.status}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
+                })}</tbody>
               </table>
             </div>
-          </div>
-        )
-      })}
+            <div className="admin-panel-footer">{activeRegistered.toLocaleString()} registered · {activeCapacity.toLocaleString()} allocated seats · {Math.max(0, activeCapacity - activeRegistered).toLocaleString()} available</div>
+          </> : <div className="admin-empty">No club allocations available.</div>}
+        </section>
 
-      {/* Export Section */}
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-8">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Export Club Data</h3>
-        <div className="flex flex-wrap gap-3">
-          <button onClick={() => exportCSV()} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-            <Download className="h-4 w-4 mr-2" /> All Registrations
-          </button>
-          {data.clubs.map((club) => (
-            <button key={club.id} onClick={() => exportCSV(club.id)} className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">
-              <Download className="h-4 w-4 mr-2 text-gray-400" /> {club.name}
-            </button>
-          ))}
-        </div>
+        <section className="admin-panel admin-export" aria-labelledby="export-heading">
+          <h2 id="export-heading">Export registrations</h2>
+          <p>Download student details as a CSV file for your records.</p>
+          <button className="admin-button admin-button-primary" style={{ marginTop: 20 }} onClick={() => exportCSV()}><Download size={16} /> Export all registrations</button>
+          <div className="admin-export-divider" />
+          <label htmlFor="export-club" className="admin-field-label">Export a specific club</label>
+          <select id="export-club" className="admin-control" value={exportClub} onChange={e => setExportClub(e.target.value)}>
+            <option value="">Choose a club</option>
+            {data.clubs.filter(club => !club.is_aws_only).map(club => <option key={club.id} value={club.id}>{club.name}</option>)}
+          </select>
+          <button className="admin-button" disabled={!exportClub} onClick={() => exportCSV(exportClub)}><Download size={16} /> Export selected club</button>
+          <div className="admin-note"><strong>Seats are allocated by department</strong>Year does not affect club quotas. Japanese Club registrations are separate from the seat totals above.</div>
+        </section>
       </div>
 
-      {/* Registrations List */}
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-        <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-gray-900">Recent Registrations</h3>
-          <button onClick={() => exportCSV()} className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200">
-            <Download className="h-4 w-4 mr-1" /> Export All CSV
-          </button>
+      <section className="admin-panel" aria-labelledby="registrations-heading">
+        <div className="admin-panel-heading">
+          <div><h2 id="registrations-heading">Recent registrations</h2><p>Latest {recentRegistrations.length} of {totalRegistrations.toLocaleString()} registrations.</p></div>
+          <div className="admin-search"><Search size={16} aria-hidden="true" /><label htmlFor="registration-search" className="sr-only">Search the latest 50 registrations</label><input id="registration-search" className="admin-control" placeholder="Search name, register no. or club" value={search} onChange={e => setSearch(e.target.value)} /></div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-white">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg No.</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dept</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Club</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {data.registrations.slice(0, 50).map((reg) => (
-                <tr key={reg.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{reg.student_name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.register_number}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reg.departments?.short_name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">{reg.clubs?.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(reg.created_at).toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
+        {visibleRegistrations.length ? <div className="admin-table-wrap" tabIndex={0} role="region" aria-label="Latest registrations">
+          <table className="admin-table">
+            <thead><tr><th scope="col">Student</th><th scope="col">Register number</th><th scope="col">Department</th><th scope="col">Club</th><th scope="col">Status</th><th scope="col">Registered</th></tr></thead>
+            <tbody>{visibleRegistrations.map(reg => <tr key={reg.id}>
+              <td style={{ fontWeight: 600 }}>{reg.student_name}</td><td style={{ fontFamily: 'monospace', color: 'var(--admin-muted)' }}>{reg.register_number}</td><td>{reg.departments?.short_name || '—'}</td><td>{reg.clubs?.name || '—'}</td>
+              <td><span className={`admin-badge ${reg.status !== 'ACCEPTED' ? 'admin-badge-full' : ''}`}>{reg.status.charAt(0) + reg.status.slice(1).toLowerCase()}</span></td>
+              <td className="admin-muted">{new Date(reg.created_at).toLocaleDateString([], { day: 'numeric', month: 'short' })}</td>
+            </tr>)}</tbody>
           </table>
-          {data.registrations.length > 50 && (
-            <div className="px-6 py-3 text-sm text-gray-500 text-center border-t border-gray-200">
-              Showing 50 most recent registrations. Export CSV for all records.
-            </div>
-          )}
-        </div>
-      </div>
+        </div> : <div className="admin-empty"><ClipboardList size={30} aria-hidden="true" /><strong>{query ? 'No matching registrations' : 'No registrations yet'}</strong><p>{query ? 'Try another name or register number within the latest 50 records.' : 'New student registrations will appear here. Refresh to check for updates.'}</p></div>}
+        <div className="admin-panel-footer">Showing {visibleRegistrations.length} of the latest {recentRegistrations.length} records. Export all registrations to download the complete list.</div>
+      </section>
     </div>
   )
 }
